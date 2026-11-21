@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8e9">
+  <title>Banana Ripeness Classification</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Banana Ripeness Classification">
+      <span class="brand-mark" aria-hidden="true">BR<i></i></span>
+      <span class="brand-copy">
+        <span class="eyebrow">COMPUTER VISION · CS231</span>
+        <span class="brand-title">Banana Ripeness <em>Classification</em></span>
+      </span>
+    </a>
+    <span class="local-badge"><i></i> LOCAL DEMO</span>
+  </header>
+
+  <main class="page-shell">
+    <div class="workspace">
+      <section class="card image-card" aria-labelledby="image-heading">
+        <div class="section-heading">
+          <span class="step">01</span>
+          <div><h1 id="image-heading">Ảnh đầu vào</h1><p>TẢI ẢNH LÊN</p></div>
+        </div>
+        <div id="dropzone" class="dropzone">
+          <div class="image-meta" id="image-meta" hidden>
+            <span id="image-name">Ảnh đầu vào</span>
+            <button id="clear" class="clear-image" type="button" aria-label="Xóa ảnh" title="Xóa ảnh">×</button>
+          </div>
+          <div id="placeholder" class="placeholder">
+            <span class="upload-symbol" aria-hidden="true">↑</span>
+            <h2>Đưa ảnh chuối vào đây</h2>
+            <p>Kéo thả ảnh hoặc nhấp để chọn từ thiết bị</p>
+            <button id="upload-main" class="soft-button" type="button">↑ &nbsp;Tải ảnh lên</button>
+          </div>
+          <img id="preview" alt="Ảnh chuối đầu vào" hidden>
+        </div>
+        <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/bmp" hidden>
+      </section>
+
+      <section class="card model-card" aria-labelledby="model-heading">
+        <div class="section-heading">
+          <span class="step">02</span>
+          <div><h2 id="model-heading">Chọn mô hình</h2><p>SVM · CNN · MOBILENETV2</p></div>
+        </div>
+        <div class="family-tabs" role="tablist" aria-label="Họ mô hình">
+          <button class="family-tab" type="button" role="tab" data-family="SVM" aria-selected="false">SVM</button>
+          <button class="family-tab active" type="button" role="tab" data-family="CNN" aria-selected="true">CNN</button>
+          <button class="family-tab" type="button" role="tab" data-family="MobileNetV2" aria-selected="false">MobileNetV2</button>
+        </div>
+        <label class="visually-hidden" for="model-select">Checkpoint mô hình</label>
+        <select id="model-select" class="model-select" aria-label="Chọn checkpoint"></select>
+        <button id="predict" class="predict-button" type="button" disabled>Phân tích ảnh</button>
+
+        <section id="result-panel" class="result-panel" aria-live="polite" aria-label="Kết quả phân loại">
+          <div class="result-empty" id="result-empty">
+            <span class="result-empty-mark" aria-hidden="true">✳</span>
+            <strong>Kết quả dự đoán sẽ hiển thị tại đây</strong>
+            <span>Tải ảnh lên, chọn mô hình và nhấn “Phân tích ảnh”.</span>
+          </div>
+          <div id="result-content" hidden>
+            <div class="prediction-head">
+              <span id="prediction-swatch" class="prediction-swatch"></span>
+              <div class="prediction-name"><small>KẾT QUẢ DỰ ĐOÁN</small><strong id="verdict">—</strong></div>
+              <div class="confidence"><small id="confidence-label">ĐỘ TIN CẬY</small><strong id="confidence">—</strong></div>
+            </div>
+            <div class="ripeness-scale" aria-label="Giai đoạn chín">
+              <span class="scale-segment green" data-stage="Green"></span><span class="scale-segment semi" data-stage="Semi-ripe"></span><span class="scale-segment ripe" data-stage="Ripe"></span><span class="scale-segment overripe" data-stage="Overripe"></span>
+              <div class="scale-labels"><span>Chưa chín</span><span>Chín vừa</span><span>Chín</span><span>Quá chín</span></div>
+            </div>
+            <div id="results" class="probabilities"></div>
+            <p id="svm-note" class="svm-note" hidden>SVM chỉ trả về nhãn dự đoán, không có xác suất hiệu chuẩn.</p>
+            <div class="result-footer">
+              <span><strong>Model sử dụng:</strong> <span id="model-used">—</span></span>
+              <span id="elapsed">Suy luận: —</span>
+            </div>
+          </div>
+        </section>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+    <footer class="page-footer"><span>SVM / CNN / MOBILENETV2</span><span>LOCAL INFERENCE</span></footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

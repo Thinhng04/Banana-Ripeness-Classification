@@ -1,0 +1,77 @@
+[
+  {
+    "id": "svm_hsv",
+    "name": "SVM · 1",
+    "family": "SVM",
+    "detail": "HSV histogram",
+    "feature": "hsv",
+    "path": "models/svm_hsv.joblib",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "svm_lbp",
+    "name": "SVM · 2",
+    "family": "SVM",
+    "detail": "LBP texture",
+    "feature": "lbp",
+    "path": "models/svm_lbp.joblib",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "svm_hsv_lbp",
+    "name": "SVM · 3",
+    "family": "SVM",
+    "detail": "HSV + LBP",
+    "feature": "hsv_lbp",
+    "path": "models/svm_hsv_lbp.joblib",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "cnn_a",
+    "name": "CNN · A_slide",
+    "family": "CNN",
+    "detail": "Conv6 / Conv16 · fully connected",
+    "path": "models/cnn_a.keras",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "cnn_b",
+    "name": "CNN · B_features",
+    "family": "CNN",
+    "detail": "Conv32 / 64 / 128 · global average pooling",
+    "path": "models/cnn_b.keras",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "cnn_c",
+    "name": "CNN · C_bn_dropout",
+    "family": "CNN",
+    "detail": "Batch normalization + dropout",
+    "path": "models/cnn_c.keras",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "mobile_1",
+    "name": "MobileNetV2 · 1",
+    "family": "MobileNetV2",
+    "detail": "Frozen backbone",
+    "path": "models/mobilenet_1_best.pth",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "mobile_2",
+    "name": "MobileNetV2 · 2",
+    "family": "MobileNetV2",
+    "detail": "Fine-tuning",
+    "path": "models/mobilenet_2_best.pth",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  },
+  {
+    "id": "mobile_3",
+    "name": "MobileNetV2 · 3",
+    "family": "MobileNetV2",
+    "detail": "Fine-tuning + train augmentation",
+    "path": "models/mobilenet_3_best.pth",
+    "class_names": ["Green", "Semi-ripe", "Ripe", "Overripe"]
+  }
+]
