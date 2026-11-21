@@ -1,119 +1,119 @@
-# Nhận diện độ chín của chuối
+<div align="center">
+
+# 🍌 Banana Vision
+### Nhận diện độ chín của chuối bằng thị giác máy tính
+
+**SVM · CNN · MobileNetV2**
+Từ một ảnh đầu vào đến dự đoán bốn giai đoạn chín.
+
+</div>
 
 ## 1. Giới thiệu
 
-Đây là đồ án môn **CS231 – Nhập môn Thị giác máy tính**, Trường Đại học Công nghệ Thông tin – Đại học Quốc gia TP. Hồ Chí Minh (UIT – VNUHCM). Đồ án xây dựng hệ thống phân loại độ chín của chuối từ ảnh và so sánh ba hướng tiếp cận: **SVM**, **CNN** và **MobileNetV2**.
+Bài toán đặt ra là xác định độ chín của trái chuối dựa trên hình ảnh. Hệ thống phân loại ảnh thành bốn lớp: **Green** (xanh), **Semi-ripe** (chín vừa), **Ripe** (chín) và **Overripe** (quá chín).
 
-Web demo cho phép tải ảnh chuối lên, chọn họ mô hình và xem dự đoán cho bốn lớp: `Green`, `Semi-ripe`, `Ripe` và `Overripe`. Các mô hình đã huấn luyện được cung cấp trong thư mục `models/`; người dùng không cần tải dataset hoặc huấn luyện lại để chạy demo. Ảnh tải lên được xử lý trên máy local.
+Để giải quyết bài toán, dự án khảo sát ba hướng thị giác máy tính:
+
+- **SVM** kết hợp bộ phân loại RBF với đặc trưng màu HSV và kết cấu LBP.
+- **CNN** học đặc trưng trực tiếp từ pixel ảnh qua các lớp tích chập.
+- **MobileNetV2** sử dụng backbone pretrained trên ImageNet, sau đó đóng băng hoặc fine-tune một phần để phân loại bốn lớp.
 
 ## 2. Kiến trúc pipeline
 
 ```mermaid
-flowchart LR
-    A[Người dùng chọn ảnh] --> B[Giao diện static/app.js]
-    B -->|POST /api/preview| C[server.py]
-    C --> D[Đọc ảnh, xoay EXIF, tạo preview]
-    D --> B
-    B -->|POST /api/predict?model=...| C
-    C --> E[inference.py]
-    E --> F[Tiền xử lý theo họ model]
-    F --> G[Nạp checkpoint trong models/]
-    G --> H[Dự đoán 4 lớp]
-    H --> C
-    C -->|JSON: nhãn, xác suất, thời gian| B
-    B --> I[Hiển thị kết quả]
+flowchart TD
+    A[Ảnh chuối] --> B[Đọc ảnh · áp dụng EXIF · RGB]
+    B --> C{Chọn mô hình}
+    C --> S1[SVM: letterbox 128×128]
+    S1 --> S2[HSV histogram và/hoặc LBP]
+    S2 --> S3[SVC RBF + predict_proba]
+    C --> N1[CNN: resize giữ tỷ lệ + padding 128×128]
+    N1 --> N2[Conv → ReLU → Pooling]
+    N2 --> N3[Dense → Softmax]
+    C --> M1[MobileNetV2: letterbox 224×224]
+    M1 --> M2[ImageNet normalization]
+    M2 --> M3[Backbone pretrained + classifier]
+    S3 --> R[Điểm số cho Green · Semi-ripe · Ripe · Overripe]
+    N3 --> R
+    M3 --> R
+    R --> O[Nhãn dự đoán + xác suất từng lớp]
 ```
 
-1. **Giao diện** (`static/`) tải danh sách model từ `GET /api/models`, nhận ảnh từ người dùng và gửi ảnh đến server.
-2. **Server** (`server.py`) phục vụ trang web và cung cấp ba API: `/api/models`, `/api/preview`, `/api/predict`. Server kiểm tra ảnh, giới hạn kích thước và chuyển yêu cầu dự đoán cho phần inference.
-3. **Inference** (`inference.py`) đọc cấu hình model trong `models.json`, tiền xử lý ảnh phù hợp với từng họ model, nạp checkpoint và chạy dự đoán.
-4. **Kết quả** được server trả về dưới dạng JSON. Giao diện hiển thị lớp dự đoán, xác suất từng lớp và thời gian suy luận.
+### Luồng xử lý ảnh chung
 
-Tiền xử lý khác nhau theo mô hình: SVM trích đặc trưng HSV/LBP; CNN resize ảnh có giữ tỷ lệ; MobileNetV2 resize ảnh, thêm padding và chuẩn hóa theo ImageNet. Các xác suất là ước lượng của mô hình, không đảm bảo dự đoán luôn chính xác.
+Ảnh đầu vào được đọc, xoay đúng chiều theo EXIF và chuyển sang RGB. Mỗi họ model có cách chuẩn hóa riêng để khớp với quy trình đã dùng khi huấn luyện. Sau khi suy luận, model trả điểm cho bốn lớp; giao diện chọn lớp có điểm cao nhất và hiển thị xác suất của từng lớp.
 
-## 3. Hướng dẫn cài đặt & vận hành (step by step)
+### SVM — đặc trưng thủ công rồi phân loại
 
-Hướng dẫn dưới đây dành cho Windows và người chạy demo lần đầu. Cần kết nối Internet trong bước cài thư viện. Máy không cần GPU, nhưng lần cài PyTorch/TensorFlow có thể mất vài phút và cần nhiều dung lượng.
+1. Chuyển ảnh RGB sang BGR và resize giữ nguyên tỷ lệ vào khung **128×128**, phần trống được padding màu đen. Một mask đánh dấu vùng ảnh thật để phần padding không làm sai histogram.
+2. Tính một trong ba bộ đặc trưng:
+   - **HSV:** histogram màu Hue/Saturation, 128 chiều.
+   - **LBP:** histogram kết cấu Local Binary Patterns, 10 chiều.
+   - **HSV + LBP:** nối hai bộ đặc trưng, 138 chiều.
+3. Bộ phân loại **SVC với kernel RBF** chọn lớp. Checkpoint bật `probability=True`, nên `predict_proba` trả xác suất ước lượng cho cả bốn lớp.
 
-### Bước 1: Cài công cụ
+**LBP (Local Binary Patterns)** mô tả hoa văn cục bộ của ảnh, còn **HSV** biểu diễn sắc độ và độ bão hòa màu. Đây là các đặc trưng được tính trước; SVM không tự học đặc trưng trực tiếp từ pixel như CNN.
 
-1. Cài **Python 3.11 64-bit** từ [python.org](https://www.python.org/downloads/). Trong trình cài đặt, chọn **Add Python to PATH**.
-2. Cài **Git for Windows** từ [git-scm.com](https://git-scm.com/download/win).
-3. Mở Command Prompt mới và kiểm tra Python:
+### CNN — học đặc trưng từ ảnh
 
-   ```bat
-   py -3.11 --version
-   ```
+Ảnh RGB được resize giữ tỷ lệ và padding vào khung **128×128**, sau đó pixel được đưa về khoảng 0–1. Các lớp convolution học những mẫu ảnh từ đơn giản đến phức tạp; ReLU tạo phi tuyến, còn max pooling giảm kích thước bản đồ đặc trưng. Lớp cuối dùng **Softmax** để tạo xác suất cho bốn lớp.
 
-   Nếu lệnh không chạy, cài lại Python và chọn **Add Python to PATH**.
+Ba cấu hình trong notebook:
 
-### Bước 2: Tải project
+- **A_slide:** hai lớp convolution (6 và 16 filters), sau đó Flatten và các lớp Dense.
+- **B_features:** ba khối convolution (32, 64, 128 filters), Global Average Pooling và Dense.
+- **C_bn_dropout:** kiến trúc B bổ sung **Batch Normalization (BN)** và **Dropout 20%**. BN chuẩn hóa activation trong quá trình huấn luyện; Dropout tạm tắt ngẫu nhiên một phần neuron khi huấn luyện để giảm overfitting. Hai kỹ thuật này không có nghĩa mô hình chắc chắn tốt hơn; cần xem kết quả đánh giá.
 
-Mở Command Prompt tại thư mục muốn lưu project, sau đó chạy:
+### MobileNetV2 — backbone pretrained và fine-tuning
 
-```bat
+Ảnh RGB được resize giữ tỷ lệ, padding vào khung **224×224**, rồi chuẩn hóa bằng mean/std của ImageNet. Backbone MobileNetV2 trích đặc trưng; classifier cuối được thay bằng lớp dự đoán bốn giai đoạn chín.
+
+- **MobileNetV2.1 — Frozen Backbone:** đóng băng backbone pretrained; chỉ huấn luyện classifier mới.
+- **MobileNetV2.2 — Fine-tuning:** mở một phần các tầng cuối của backbone cùng classifier để thích nghi với ảnh chuối.
+- **MobileNetV2.3 — Fine-tuning + Augmentation:** cấu hình fine-tuning như bản 2, đồng thời tăng cường dữ liệu nhẹ chỉ trên tập train (lật ngang và affine nhẹ).
+
+**Fine-tuning** là tiếp tục cập nhật một phần trọng số pretrained trên dữ liệu mục tiêu. **Augmentation** tạo biến thể ảnh trong lúc huấn luyện để model gặp nhiều tình huống hơn; validation và test không dùng augmentation ngẫu nhiên.
+
+### Kết quả trên tập test
+
+Các notebook dùng cùng manifest và **378 ảnh test**. Bảng dưới tổng hợp Accuracy và F1-macro được báo cáo cho từng biến thể.
+
+![So sánh Accuracy và F1-macro trên tập test](notebook/model_comparison_test.png)
+
+| Họ model | Phiên bản | Accuracy | F1-macro |
+|---|---|---:|---:|
+| SVM | HSV | 88.62% | 88.63% |
+| SVM | LBP | 74.34% | 73.94% |
+| SVM | HSV + LBP | 89.68% | 89.69% |
+| CNN | A_slide | 89.15% | 89.29% |
+| CNN | B_features | 92.86% | 92.80% |
+| CNN | C_bn_dropout | 94.18% | 94.14% |
+| MobileNetV2 | 1 · Frozen Backbone | 94.71% | 94.64% |
+| MobileNetV2 | 2 · Fine-tuning | 95.24% | 95.21% |
+| MobileNetV2 | 3 · Fine-tuning + Augmentation | 94.97% | 94.94% |
+
+Mỗi notebook hiện báo cáo một lần chạy/seed; các con số mô tả kết quả trên split test này, không phải cam kết hiệu năng trên mọi ảnh thực tế.
+
+## 3. Hướng dẫn cài đặt & vận hành
+
+Từ Anaconda Prompt hoặc Miniconda Prompt:
+
+```bash
 git clone https://github.com/Thinhng04/CS231.git
 cd CS231
-```
-
-### Bước 3: Tạo môi trường riêng
-
-Tạo và kích hoạt môi trường Python riêng để các thư viện của demo không ảnh hưởng đến Python khác trên máy:
-
-```bat
-py -3.11 -m venv .venv
-.venv\Scripts\activate
-```
-
-Khi môi trường được kích hoạt, đầu dòng lệnh thường có tiền tố `(.venv)`.
-
-### Bước 4: Cài thư viện
-
-```bat
-python -m pip install --upgrade pip
+conda create -n banana-demo python=3.11 -y
+conda activate banana-demo
 python -m pip install -r requirements-models.txt
-```
-
-`requirements-models.txt` cài các thư viện cần để chạy đủ SVM, CNN và MobileNetV2. Nếu chỉ cài `requirements.txt`, các thư viện nền tảng được cài nhưng chưa đủ cho inference của các model.
-
-### Bước 5: Khởi động web server
-
-Trong cùng cửa sổ Command Prompt, khi `.venv` còn được kích hoạt, chạy:
-
-```bat
 python server.py
 ```
 
-Server chạy mặc định tại `http://127.0.0.1:8000`. Mở địa chỉ này bằng trình duyệt. Giữ cửa sổ terminal mở trong lúc dùng web; quay lại terminal và nhấn `Ctrl+C` để dừng server.
-
-Nếu cổng 8000 đang được ứng dụng khác sử dụng, chạy:
-
-```bat
-python server.py --port 8001
-```
-
-Sau đó mở `http://127.0.0.1:8001`.
-
-### Bước 6: Thực hiện dự đoán
-
-1. Nhấn vùng tải ảnh hoặc kéo thả ảnh chuối vào trang. Định dạng hỗ trợ: JPG, PNG, WEBP, BMP; dung lượng tối đa 15 MB.
-2. Chọn họ model **SVM**, **CNN** hoặc **MobileNetV2**.
-3. Chọn phiên bản model trong danh sách.
-4. Nhấn **Phân tích ảnh**.
-5. Xem lớp dự đoán, xác suất của bốn lớp, model được dùng và thời gian suy luận.
-
-### Một số lỗi thường gặp
-
-- **`No module named ...`:** kích hoạt `.venv` rồi chạy lại `python -m pip install -r requirements-models.txt`.
-- **Model không khả dụng hoặc thiếu checkpoint:** xác nhận thư mục `models/` có các file tương ứng và project được tải đầy đủ.
-- **Không mở được trang:** kiểm tra terminal còn chạy server; nếu đổi cổng, dùng đúng địa chỉ mới.
-- **PowerShell không cho kích hoạt môi trường:** dùng Command Prompt như các bước trên, hoặc tiếp tục chạy trong Anaconda Prompt đã kích hoạt môi trường có đủ dependencies.
+Khi server khởi động, mở **http://127.0.0.1:8000** trên trình duyệt. Tải ảnh chuối lên, chọn họ và phiên bản model, rồi nhấn **Phân tích ảnh**. Dừng server bằng `Ctrl+C` trong cửa sổ terminal.
 
 ## 4. Cấu trúc thư mục
 
 ```text
 CS231/
-├── README.md                   # Giới thiệu, kiến trúc và hướng dẫn chạy
+├── README.md                   # Giới thiệu, pipeline, kết quả và hướng dẫn chạy
 ├── server.py                   # HTTP server local và các API
 ├── inference.py                # Tiền xử lý, nạp model và dự đoán
 ├── models.json                 # Danh mục model, nhãn và đường dẫn checkpoint
@@ -128,12 +128,11 @@ CS231/
 │   ├── index.html
 │   ├── app.js
 │   └── style.css
-├── notebook/                   # Notebook và gói kết quả thí nghiệm
+├── notebook/                   # Notebook, kết quả thí nghiệm và biểu đồ
 │   ├── svm.ipynb
 │   ├── cnn.ipynb
 │   ├── mobilenet.ipynb
-│   ├── cnn_result.zip
-│   ├── mobilenet_result.zip
-│   └── svm_result.zip
+│   ├── *_result.zip
+│   └── model_comparison_test.png
 └── tests/                      # Mã kiểm tra API và xử lý ảnh
 ```
