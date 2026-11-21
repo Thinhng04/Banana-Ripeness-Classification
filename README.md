@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🍌 Banana Vision
+# 🍌 Banana Ripeness Classification
 ### Nhận diện độ chín của chuối bằng thị giác máy tính
 
 **SVM · CNN · MobileNetV2**
