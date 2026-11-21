@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🍌 Banana Ripeness Classification
-### Nhận diện độ chín của chuối bằng thị giác máy tính
+### Nhận diện độ chín của trái chuối bằng thị giác máy tính
 
 **SVM · CNN · MobileNetV2**
 Từ một ảnh đầu vào đến dự đoán bốn giai đoạn chín.
@@ -28,7 +28,7 @@ Bài toán đặt ra là xác định độ chín của trái chuối dựa trê
 
 ```mermaid
 flowchart TD
-    A[Ảnh chuối] --> B[Đọc ảnh · áp dụng EXIF · RGB]
+    A[Ảnh 1 trái chuối] --> B[Đọc ảnh · áp dụng EXIF · RGB]
     B --> C{Chọn mô hình}
     C --> S1[SVM: letterbox 128×128]
     S1 --> S2[HSV histogram và/hoặc LBP]
