@@ -131,7 +131,9 @@ CS231/
 ├── notebook/                   # Notebook và gói kết quả thí nghiệm
 │   ├── svm.ipynb
 │   ├── cnn.ipynb
-│   └── mobilenet.ipynb
+│   ├── mobilenet.ipynb
+│   ├── cnn_result.zip
+│   ├── mobilenet_result.zip
+│   └── svm_result.zip
 └── tests/                      # Mã kiểm tra API và xử lý ảnh
 ```
-
