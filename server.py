@@ -148,6 +148,47 @@ class Handler(BaseHTTPRequestHandler):
                 finally:
                     image.close()
 
+            if request.path == "/api/compare":
+                image = read_rgb(raw)
+                started = time.perf_counter()
+                results = []
+                try:
+                    for number, model in enumerate(catalog(), start=1):
+                        row = {
+                            "number": number,
+                            "model": model["name"],
+                            "detail": model["detail"],
+                            "status": "ok",
+                        }
+                        if not model["available"]:
+                            row.update(status="unavailable", error="Chưa có checkpoint.")
+                            results.append(row)
+                            continue
+
+                        try:
+                            prediction = predict(image, model["id"])
+                            scores = prediction["scores"] or {prediction["label"]: 1.0}
+                            probabilities = ordered_probabilities(scores)
+                            best = max(probabilities, key=lambda item: item["probability"])
+                            row.update(
+                                label=best["label"],
+                                probability=best["probability"],
+                                has_probabilities=prediction["scores"] is not None,
+                            )
+                        except Exception as exc:
+                            row.update(status="error", error=str(exc))
+                        results.append(row)
+                finally:
+                    image.close()
+
+                return self._send_json(
+                    200,
+                    {
+                        "results": results,
+                        "elapsed_ms": round((time.perf_counter() - started) * 1000, 2),
+                    },
+                )
+
             if request.path == "/api/predict":
                 model_id = parse_qs(request.query).get("model", [""])[0]
                 model = next((item for item in catalog() if item["id"] == model_id), None)

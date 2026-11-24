@@ -34,7 +34,7 @@
           <div id="placeholder" class="placeholder">
             <span class="upload-symbol" aria-hidden="true">↑</span>
             <h2>Đưa ảnh chuối vào đây</h2>
-            <p>Kéo thả ảnh hoặc nhấp để chọn từ thiết bị</p>
+            <p>Kéo thả ảnh, nhấp để chọn hoặc nhấn Ctrl+V để dán ảnh chụp màn hình</p>
             <button id="upload-main" class="soft-button" type="button">↑ &nbsp;Tải ảnh lên</button>
           </div>
           <img id="preview" alt="Ảnh chuối đầu vào" hidden>
@@ -45,16 +45,33 @@
       <section class="card model-card" aria-labelledby="model-heading">
         <div class="section-heading">
           <span class="step">02</span>
-          <div><h2 id="model-heading">Chọn mô hình</h2><p>SVM · CNN · MOBILENETV2</p></div>
+          <div class="model-heading-copy"><h2 id="model-heading">Chọn mô hình</h2><p>SVM · CNN · MOBILENETV2</p></div>
+          <button id="compare" class="compare-button" type="button" disabled>So sánh</button>
         </div>
-        <div class="family-tabs" role="tablist" aria-label="Họ mô hình">
-          <button class="family-tab" type="button" role="tab" data-family="SVM" aria-selected="false">SVM</button>
-          <button class="family-tab active" type="button" role="tab" data-family="CNN" aria-selected="true">CNN</button>
-          <button class="family-tab" type="button" role="tab" data-family="MobileNetV2" aria-selected="false">MobileNetV2</button>
+        <div id="model-controls">
+          <div class="family-tabs" role="tablist" aria-label="Họ mô hình">
+            <button class="family-tab" type="button" role="tab" data-family="SVM" aria-selected="false">SVM</button>
+            <button class="family-tab active" type="button" role="tab" data-family="CNN" aria-selected="true">CNN</button>
+            <button class="family-tab" type="button" role="tab" data-family="MobileNetV2" aria-selected="false">MobileNetV2</button>
+          </div>
+          <label class="visually-hidden" for="model-select">Checkpoint mô hình</label>
+          <select id="model-select" class="model-select" aria-label="Chọn checkpoint"></select>
+          <button id="predict" class="predict-button" type="button" disabled>Phân tích ảnh</button>
         </div>
-        <label class="visually-hidden" for="model-select">Checkpoint mô hình</label>
-        <select id="model-select" class="model-select" aria-label="Chọn checkpoint"></select>
-        <button id="predict" class="predict-button" type="button" disabled>Phân tích ảnh</button>
+
+        <section id="comparison-panel" class="comparison-panel" aria-live="polite" aria-label="So sánh dự đoán của chín mô hình" hidden>
+          <div class="comparison-heading">
+            <div><h3>So sánh 9 mô hình</h3><p>Cùng một ảnh được chạy qua toàn bộ mô hình</p></div>
+            <button id="close-comparison" class="close-comparison" type="button" aria-label="Đóng bảng so sánh" title="Đóng bảng so sánh">×</button>
+          </div>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead><tr><th scope="col">Model</th><th scope="col">Label</th><th scope="col">Xác suất</th></tr></thead>
+              <tbody id="comparison-rows"></tbody>
+            </table>
+          </div>
+          <p id="comparison-summary" class="comparison-summary" role="status"></p>
+        </section>
 
         <section id="result-panel" class="result-panel" aria-live="polite" aria-label="Kết quả phân loại">
           <div class="result-empty" id="result-empty">
